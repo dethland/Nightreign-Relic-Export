@@ -4,12 +4,13 @@ import pytesseract
 import re
 import queue
 import threading
+import pandas as pd  # need for pytesseract OUTPUT.DATAFRAME
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-COVER_ICON_MARGIN = (0.16, 0, 0.05, 1) # top, left, right, down
+COVER_ICON_MARGIN = (0, 0.16, 0.05, 1)  # left,top, size_x, size_y
 
-TITLE_REGION = (0, 0, 1, 0.16) # left, top, sizex, sizey
+TITLE_REGION = (0, 0, 1, 0.16)  # left, top, sizex, sizey
 STAT_1_REGION = (0.05, 0.18, 0.93, 0.26)
 STAT_2_REGION = (0.05, 0.43, 0.93, 0.26)
 STAT_3_REGION = (0.05, 0.73, 0.93, 0.26)
@@ -48,17 +49,8 @@ class ImageProcessor:
 
     def process(self, image):
         image = self.image_preprocess(image, COVER_ICON_MARGIN)
-        # title = self.extract_text_from_region(image=image, region=TITLE_REGION)
-        # stat1 = self.extract_text_from_region(image=image, region=STAT_1_REGION)
-        # stat2 = self.extract_text_from_region(image=image, region=STAT_2_REGION)
-        # stat3 = self.extract_text_from_region(image=image, region=STAT_3_REGION)
         text_array = self.extract_text(image)
-        return [title, stat1, stat2, stat3]
-
-    def clean_text(self, text):
-        cleaned_text = re.sub(r"[^\w\s]", "", text)
-        cleaned_text = cleaned_text.strip()
-        return cleaned_text
+        return text_array
 
     def image_preprocess(self, image, margin=(0, 0, 0, 0)):
         img = image.convert("L")  # Convert to grayscale
@@ -69,54 +61,63 @@ class ImageProcessor:
         # Black out region if margin is specified
         if any(margin):
             width, height = polarized.size
-            top = int(height * margin[0])
-            left = int(width * margin[1])
+            left = int(width * margin[0])
+            top = int(height * margin[1])
             right = int(width * margin[2])
             bottom = int(height * margin[3])
             for y in range(top, bottom):
                 for x in range(left, right):
                     polarized.putpixel((x, y), 0)
-
         return polarized
-
 
     def extract_text(self, image):
         # image is PIL image.Image
-        rows = []
-        current_row = []
-        last_top = None
-        last_top_y
+        result = []
+        pixel_regions = self.get_pixel_regions(image)
 
-        data = pytesseract.image_to_boxes(image)
-        data.
-        
-        # text = text.replace('\n', ' ').strip()
-        # text = self.text_to_array(text)
-        return text
+        data = pytesseract.image_to_data(
+            image, output_type=pytesseract.Output.DATAFRAME)
+        data = data[data.text.notnull()]
 
+        data['row'] = data['top'].apply(lambda y : self.assign_row(y, image))
+        data = data[data['row'] != -1]
 
-    def crop_image(self, img, crop_box):
-        return img.crop(crop_box)
+        grouped_rows = data.groupby('row')
 
+        for row_index, group in grouped_rows:
+            sorted_group = group.sort_values(by="left")
+            line = ' '.join(sorted_group['text'])
+            result.append(line.strip())
 
-    def text_to_array(self, text):
-        lines = re.split(r'(?<!\w)\n', text)
-        return [line for line in lines if line.strip()]
-    
+        return result
 
-    def extract_text_from_region(self, image, region):
-        width, height = image.size
-        left = int(region[0] * width)
-        top = int(region[1] * height)
-        right = int((region[0] + region[2]) * width)
-        bottom = int((region[1] + region[3]) * height)
-        crop_box = (left, top, right, bottom)
-        cropped_img = image.crop(crop_box)
-        return self.extract_text(cropped_img)
+    def assign_row(self, y, image):
+        row_regions = self.get_pixel_regions(image)
 
-
-    def assign_row(y):
-        for i, (start, end) in enumerate(row_regions):
+        for i, (start_x, start_y, size_x, size_y) in enumerate(row_regions):
+            start = start_y
+            end = start_y + size_y
             if start <= y <= end:
                 return i
         return -1  # or None, for items not in any region
+
+    def margin_to_pixel(self, image, margin_tuple):
+        width, height = image.size
+        left_up_x = int(width * margin_tuple[0])
+        left_up_y = int(height * margin_tuple[1])
+        size_x = int(width * margin_tuple[2])
+        size_y = int(height * margin_tuple[3])
+        return (left_up_x, left_up_y, size_x, size_y)
+
+    def get_pixel_regions(self, image):
+        title_pixel_region = self.margin_to_pixel(image, TITLE_REGION)
+        stat1_pixel_region = self.margin_to_pixel(image, STAT_1_REGION)
+        stat2_pixel_region = self.margin_to_pixel(image, STAT_2_REGION)
+        stat3_pixel_region = self.margin_to_pixel(image, STAT_3_REGION)
+        pixel_regions = [
+            title_pixel_region,
+            stat1_pixel_region,
+            stat2_pixel_region,
+            stat3_pixel_region
+        ]
+        return pixel_regions
