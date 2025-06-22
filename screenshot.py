@@ -11,16 +11,78 @@ screen_name = "ELDEN RING NIGHTREIGN"
 os.makedirs(screenshot_folder, exist_ok=True)
 
 
-relic_info_region_tuple = (0.558984375, 0.7201388888888889, 0.878125, 0.8958333333333334)
+relic_info_region_tuple = (
+    0.558984375, 0.7201388888888889, 0.878125, 0.8958333333333334)
 
-relic_invetory_region_tuple = (0.48125, 0.19537037037037036, 0.9338541666666667, 0.6787037037037037)
+relic_inventory_region_tuple = (
+    0.48125, 0.19537037037037036, 0.9338541666666667, 0.6787037037037037)
 
-progress_bar_region_array = (0.9427083333333334, 0.21203703703703702, 0.9473958333333333, 0.6574074074074074)
+progress_bar_region_tuple = (
+    0.9427083333333334, 0.21203703703703702, 0.9473958333333333, 0.6574074074074074)
 
 sorting_region_tuple = (0.76796875, 0.15625, 0.835546875, 0.18055555555555555)
 
-    
 
+def capture_window_content(window_title, region=None):
+    """
+    Captures a screenshot of the specified window's client area, optionally cropping to a region.
+
+    Args:
+        window_title (str): The title of the window to capture.
+        region (tuple, optional): A tuple of normalized coordinates (rx1, ry1, rx2, ry2) specifying the region to capture.
+                                  Each value should be between 0 and 1, representing a fraction of the window's width and height.
+                                  If None, captures the entire client area.
+
+    Returns:
+        PIL.Image: The captured image as a PIL Image object.
+
+    Raises:
+        Exception: If the specified window is not found.
+        ValueError: If the region tuple is invalid.
+    """
+    hwnd = win32gui.FindWindow(None, window_title)
+    if not hwnd:
+        raise Exception(f"Window '{window_title}' not found")
+
+    # Optionally, bring window to front if needed:
+    # win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+    # win32gui.SetForegroundWindow(hwnd)
+
+    # Get client area coordinates
+    x1, y1, x2, y2 = get_client_rect(hwnd)
+    width = x2 - x1
+    height = y2 - y1
+    if region is None:
+        region = (0, 0, 1, 1)
+        region = (0, 0, 1, 1)
+
+    rx1, ry1, rx2, ry2 = region
+    if rx2 < rx1 or ry2 < ry1:
+        raise ValueError(
+            f"Invalid region tuple: {region}. rx2/ry2 must be >= rx1/ry1.")
+
+    # construct region
+    top_pixel = y1 + int(ry1 * height)
+    left_pixel = x1 + int(rx1 * width)
+    new_width = int(width * (rx2 - rx1))
+    new_height = int(height * (ry2 - ry1))
+    # Calculate bottom and right for clarity (not used directly in monitor)
+    # bottom_pixel = y1 + int(ry2 * height)
+    # right_pixel = x1 + int(rx2 * width)
+
+    # Use mss to capture that region
+    with mss.mss() as sct:
+        monitor = {
+            "top": top_pixel,
+            "left": left_pixel,
+            "width": new_width,
+            "height": new_height
+        }
+        screenshot = sct.grab(monitor)
+        img = Image.frombytes(
+            "RGB", (screenshot.width, screenshot.height), screenshot.rgb)
+
+    return img
 
 
 def screenshot_relic_info():
@@ -28,59 +90,15 @@ def screenshot_relic_info():
 
 
 def screenshot_relic_inventory():
-    return capture_window_content(screen_name, relic_invetory_region_tuple)
+    return capture_window_content(screen_name, relic_inventory_region_tuple)
 
 
 def screenshot_progress_bar():
-    return capture_window_content(screen_name, progress_bar_region_array)
+    return capture_window_content(screen_name, progress_bar_region_tuple)
 
 
 def screenshot_whole():
     return capture_window_content(screen_name)
-
-
-def tuple_to_crop_box(region_tuple, img_size):
-    """
-    Convert a region tuple (top_left_x_margin, top_left_y_margin, size_x, size_y)
-    with margin values in 0-1, to a crop box (left, top, right, bottom) in pixels.
-    """
-    img_width, img_height = img_size
-    left = int(region_tuple[0] * img_width)
-    top = int(region_tuple[1] * img_height)
-    right = left + int(region_tuple[2] * img_width)
-    bottom = top + int(region_tuple[3] * img_height)
-    return (left, top, right, bottom)
-
-
-
-def capture_window_content(window_title, region=None):
-    hwnd = win32gui.FindWindow(None, window_title)
-    if not hwnd:
-        raise Exception(f"Window '{window_title}' not found")
-
-
-    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-    win32gui.SetForegroundWindow(hwnd)
-
-    # Get client area coordinates
-    x1, y1, x2, y2 = get_client_rect(hwnd)
-    width = x2 - x1
-    height = y2 - y1
-    
-    if region == None:
-        region = (0, 0, 1, 1)
-
-    rx1, ry1, rx2, ry2 = region
-    new_width = int(width * (rx2 - rx1))
-    new_height = int(height * (ry2 - ry1))
-
-    # Use mss to capture that region
-    with mss.mss() as sct:
-        monitor = {"top": y1+int(ry1*height), "left": x1 + int(rx1 * width), "width": new_width, "height": new_height}
-        screenshot = sct.grab(monitor)
-        img = Image.frombytes("RGB", (screenshot.width, screenshot.height), screenshot.rgb)
-
-    return img
 
 
 def get_client_rect(hwnd):
@@ -90,22 +108,6 @@ def get_client_rect(hwnd):
     left_top = win32gui.ClientToScreen(hwnd, (left, top))
     right_bottom = win32gui.ClientToScreen(hwnd, (right, bottom))
     return (left_top[0], left_top[1], right_bottom[0], right_bottom[1])
-
-
-
-def get_region(my_region_tuple):
-    # my_region_tuple = (top, left, right, down)
-    hwnd = win32gui.FindWindow(None, "ELDEN RING NIGHTREIGN")
-    window_tuple = get_client_rect(hwnd)
- 
-    region = {
-        "top": int(window_tuple[2] * my_region_tuple[1]),
-        "left": int(window_tuple[3] * my_region_tuple[0]),
-        "width": int(window_tuple[2] * (my_region_tuple[2] - my_region_tuple[0])),
-        "height": int(window_tuple[3] * (my_region_tuple[3] - my_region_tuple[1]))
-    }
-    return region
-
 
 
 if __name__ == "__main__":
