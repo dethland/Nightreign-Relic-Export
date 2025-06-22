@@ -1,6 +1,5 @@
 from PIL import Image
 import pytesseract
-import re
 import queue
 import threading
 from PIL import Image
