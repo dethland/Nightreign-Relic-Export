@@ -60,5 +60,4 @@ This project is licensed under the MIT License.
 
 ## Credits
 
-- Inspired by Elden Ring community tools
-- Developed by [Your Name]
+- Developed by [dethland]
