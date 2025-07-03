@@ -11,9 +11,14 @@ A tool for exporting relic data from Elden Ring.
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/Nightreign-Relic-Export.git
-cd Nightreign-Relic-Export
-# Add installation steps here
+1. Download the project as zip, or use git:
+git clone https://github.com/dethland/Nightreign-Relic-Export.git
+
+2. Download and install Tesseract-OCR, here is a guide to do that:
+https://docs.coro.net/featured/agent/install-tesseract-windows/
+
+
+3. Run install.py in the project to install required module
 ```
 
 ## Usage
