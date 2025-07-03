@@ -28,7 +28,6 @@ A tool for exporting relic data from Elden Ring.
 
 ## Usage
 
-```bash
 1. Open a terminal and navigate to the project directory:
     ```bash
     cd Nightreign-Relic-Export/scripts
