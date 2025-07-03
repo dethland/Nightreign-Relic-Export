@@ -4,9 +4,7 @@ A tool for exporting relic data from Elden Ring.
 
 ## Features
 
-- Export relic data in various formats
-- Easy-to-use interface
-- Customizable export options
+- Export relic data into cvs sheet
 
 ## Installation
 
@@ -31,9 +29,23 @@ A tool for exporting relic data from Elden Ring.
 ## Usage
 
 ```bash
-# Example usage
-python export.py --output relics.json
-```
+1. Open a terminal and navigate to the project directory:
+    ```bash
+    cd Nightreign-Relic-Export/scripts
+    ```
+
+2. Start the program:
+    ```bash
+    python main.py
+    ```
+
+3. Launch Elden Ring and enter the relic selection screen.
+
+4. Press `Ctrl + Shift + F12` to begin the export process.
+
+5. Wait for image processing to complete.
+
+6. Find your exported relic data in the `export_data` folder.
 
 ## Configuration
 
