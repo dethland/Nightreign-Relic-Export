@@ -1,5 +1,4 @@
 import cv2
-import screenshot
 
 
 def adjust_rect_for_aspect_ratio(original_size, new_size, margin_rect):
@@ -40,25 +39,51 @@ def adjust_rect_for_aspect_ratio(original_size, new_size, margin_rect):
     return (new_x, new_y, new_w_rect, new_h_rect)
 
 
+wild_card_image_filepath = "screen_shot_temp/other_img.png"
+temp_image_filepath = "screen_shot_temp/nightreign_vYm4s9i1Zk.jpg"
+normal_extract_filepath = 'screen_shot_temp/screenshot_testing.png'
 
-relic_inveotry = (0.48125, 0.19537037037037036, 0.9338541666666667, 0.6787037037037037)
-progress_bar = (0.9427083333333334, 0.21203703703703702, 0.9473958333333333, 0.6574074074074074)
-relic_info = (0.558984375, 0.7201388888888889, 0.878125, 0.8958333333333334)
-sorting = (0.76796875, 0.15625, 0.835546875, 0.18055555555555555)
+
+TITLE_REGION = (0.002190580503833516, 0.0033783783783783786, 0.9014238773274917, 0.12837837837837837)  # left, top, sizex, sizey
+# Original regions
+STAT_1_REGION = (0.05147864184008762, 0.1858108108108108, 0.9649507119386638, 0.44932432432432434)
+STAT_2_REGION = (0.04928806133625411, 0.4391891891891892, 0.963855421686747, 0.7027027027027027)
+STAT_3_REGION = (0.050383351588170866, 0.7094594594594594, 0.9627601314348302, 0.9797297297297297)
+# Combine all regions into a list
+regions = [
+    TITLE_REGION,
+    STAT_1_REGION,
+    STAT_2_REGION,
+    STAT_3_REGION
+]
+
+progress_bar_region_tuple = (
+    0.9427083333333334, 0.21203703703703702, 0.9473958333333333, 0.6574074074074074)
+
 
 # Load an image
-image = cv2.imread('screen_shot_temp/screenshot_testing.png')
+image = cv2.imread(normal_extract_filepath)
 clone = image.copy()
 
 # Draw rectangles for relic_inveotry and progress_bar
 if image is not None:
     h, w = image.shape[:2]
+    print("🐍 DEBUG: Loaded image with shape (h={}, w={})".format(h, w))
 else:
     h, w = 1080, 1920  # Fallback values if image is None
-if image is not None:
-    h, w = image.shape[:2]
+    print("🐍 DEBUG: Image is None, using fallback shape (h=1080, w=1920)")
 
-for rect in [relic_inveotry, progress_bar]:
+# # Draw rectangles for each region
+# for region in regions:
+#     # Use the actual image size instead of hardcoded (1080, 1920)
+#     x1, y1, x2, y2 = adjust_rect_for_aspect_ratio((w, h), (w, h), region)
+#     # x, y, w_rect, h_rect = adjust_rect_for_aspect_ratio((1080, 1920), (w, h), region)
+#     pt1 = (x1, y1)
+#     pt2 = (x2, y2)
+#     cv2.rectangle(image, pt1, pt2, (255, 0, 0), 2)
+#     cv2.rectangle(clone, pt1, pt2, (255, 0, 0), 2)  
+
+for rect in [progress_bar_region_tuple]:
     adjust_rect_for_aspect_ratio((1080,1920), (h, w), rect)
     x1, y1, x2, y2 = rect
     pt1 = (int(x1 * w), int(y1 * h))

@@ -8,10 +8,15 @@ import pandas as pd  # need for pytesseract OUTPUT.DATAFRAME
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-COVER_ICON_MARGIN = (0, 0.16, 0.05, 1)  # left,top, size_x, size_y
+COVER_ICON_MARGIN = (0.0032858707557502738, 0.15202702702702703, 0.04819277108433735, 0.8378378378378378)
+
+# TITLE_REGION = (0.002190580503833516, 0.0033783783783783786, 0.9014238773274917, 0.12837837837837837)  # left, top, sizex, sizey
+# # Original regions
+# STAT_1_REGION = (0.05147864184008762, 0.1858108108108108, 0.9649507119386638, 0.44932432432432434)
+# STAT_2_REGION = (0.04928806133625411, 0.4391891891891892, 0.963855421686747, 0.7027027027027027)
+# STAT_3_REGION = (0.050383351588170866, 0.7094594594594594, 0.9627601314348302, 0.9797297297297297)
 
 TITLE_REGION = (0, 0, 1, 0.16)  # left, top, sizex, sizey
-# Original regions
 STAT_1_REGION = (0.05, 0.18, 0.93, 0.26)
 STAT_2_REGION = (0.05, 0.43, 0.93, 0.26)
 STAT_3_REGION = (0.05, 0.73, 0.93, 0.26)
@@ -116,7 +121,6 @@ class ImageProcessor:
         grouped_rows = data.groupby('row')
 
 
-
         for row_index, group in grouped_rows:
             sorted_group = group.sort_values(by=["line","left"])
             line = ' '.join(sorted_group['text'])
@@ -125,6 +129,7 @@ class ImageProcessor:
         return result
 
     def assign_row(self, y, image):
+        # use to assign text to row block, data process, dont touch
         row_regions = self.get_row_regions(image)
 
         for i, (start_x, start_y, size_x, size_y) in enumerate(row_regions):
@@ -135,6 +140,7 @@ class ImageProcessor:
         return -1  # or None, for items not in any region
     
     def assign_line(self, y, image):
+        # use to assign text to line block, data process, dont touch
         line_regions = self.get_line_regions(image)
         for i, (start_x, start_y, size_x, size_y) in enumerate(line_regions):
             start = start_y
@@ -188,7 +194,7 @@ class ImageProcessor:
     def extract_progress_bar(self, image):
         # 1. Preprocess the image (convert to grayscale and threshold)
         img = image.convert("L")
-        threshold = 60
+        threshold = 75
         binary = img.point(lambda p: 255 if p > threshold else 0)
 
         # 2. Get center x coordinate
@@ -210,11 +216,18 @@ class ImageProcessor:
             return margin_value
         else:
             return 0.0
+        
+    def extract_remain_relic_count(self, image):
+         # 1. Preprocess the image (convert to grayscale and threshold)
+        img = image.convert("L")
+        threshold = 60
+        binary = img.point(lambda p: 255 if p > threshold else 0)
 
 
 if __name__ == "__main__":   
     image_path = "screen_shot_temp/other_img.png"
     image = Image.open(image_path)
     processor = ImageProcessor(thread_flag=False)
-    value = processor.extract_progress_bar(image)
-    print(f"Progress bar margin value: {value:.4f}")
+    value = processor.process(image)
+    print(value)
+    # print(f"Progress bar margin value: {value:.4f}")
