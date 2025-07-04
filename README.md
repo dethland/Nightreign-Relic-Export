@@ -50,7 +50,7 @@ A tool for exporting relic data from Elden Ring.
 
 ## Configuration
 
-- Edit `config.yaml` to customize export settings.
+- not implement yet
 
 ## Contributing
 
