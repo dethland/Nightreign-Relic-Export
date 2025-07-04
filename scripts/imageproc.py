@@ -4,6 +4,7 @@ import threading
 from PIL import Image
 import pandas as pd  # need for pytesseract OUTPUT.DATAFRAME
 import time
+import sys
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -41,38 +42,51 @@ class ImageProcessor:
         self.queue = queue.Queue()
         self.result = []
         self._stop_event = threading.Event()
-        self.thread = None
+        self.threads = []
+        self.processing_times = []
+        self.largest_index = 0
         if thread_flag:
-            self.thread = threading.Thread(target=self._worker)
-            self.thread.start()
+            for _ in range(2):  # Start 2 threads
+                t = threading.Thread(target=self._worker)
+                t.start()
+                self.threads.append(t)
 
     def _worker(self):
         while not self._stop_event.is_set() or not self.queue.empty():
             try:
-                screenshot = self.queue.get(timeout=0.1)
+                index, screenshot = self.queue.get(timeout=0.1)
             except queue.Empty:
                 continue
 
             start_time = time.time()
             processed = self.process(screenshot)
-            self.result.append(processed)
+            self.result.append([index, processed])
             self.queue.task_done()
 
             queue_size = self.queue.qsize()
-            elapsed = time.time() - start_time
+            self.processing_times.append(time.time() - start_time)
+            if self.processing_times:
+                elapsed = sum(self.processing_times) / len(self.processing_times)
+            else:
+                elapsed = 0
             if queue_size > 0:
                 est_total = elapsed * queue_size
-                print(f"Estimated remaining time: {est_total:.2f}s for {queue_size} images")
+                sys.stdout.write("\r"+f"Estimated remaining time: {est_total:.2f}s for {queue_size} images")
+                sys.stdout.flush()
     
     def add_screenshot(self, screenshot):
-        self.queue.put(screenshot)
+        
+        self.queue.put([self.largest_index, screenshot])
+        self.largest_index += 1
 
     def stop(self):
         self._stop_event.set()
-        self.thread.join()
+        for t in self.threads:
+            t.join()
 
     def get_result(self):
-        return self.result
+        self.result.sort(key=lambda x: x[0])
+        return [item[1] for item in self.result]
 
     def process(self, image):
         image = self.image_preprocess(image, COVER_ICON_MARGIN)

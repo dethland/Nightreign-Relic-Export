@@ -6,7 +6,6 @@ A tool for exporting relic data from Elden Ring.
 
 - Export relic data into cvs sheet
 
-## Installation
 
 ## Installation
 
@@ -20,10 +19,13 @@ A tool for exporting relic data from Elden Ring.
     Follow this guide to install Tesseract-OCR on Windows:  
     [Tesseract-OCR Installation Guide](https://docs.coro.net/featured/agent/install-tesseract-windows/)
 
-3. **Install Python dependencies**  
-    Run the following command in the project directory to install required modules:
+3. **Install Python**  
+    Download and install Python 3.10 or newer from the [official website](https://www.python.org/downloads/).
+
+4. **Install Python dependencies**  
+    In the project directory, run:
     ```bash
-    python install.py
+    pip install -r requirements.txt
     ```
 
 ## Usage
@@ -42,7 +44,7 @@ A tool for exporting relic data from Elden Ring.
 
 4. Press `Ctrl + Shift + F12` to begin the export process.
 
-5. Wait for image processing to complete.
+5. Wait for image processing to complete. (each process take 0.25 sec, 1000 relic takes about 4 min)
 
 6. Find your exported relic data in the `export_data` folder.
 

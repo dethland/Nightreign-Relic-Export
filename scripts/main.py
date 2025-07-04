@@ -5,6 +5,7 @@ import keyboard  # key detection
 import pydirectinput  # simulate input
 import csv
 import win32gui
+import os
 
 
 # TODO move the trigger functions into main
@@ -13,6 +14,8 @@ previous_progress = None
 progress_bar_delta = 0.0
 
 elden_ring_window_name = "ELDEN RING NIGHTREIGN"
+
+pydirectinput.PAUSE = 0.05
 
 
 def get_active_window_app_name():
@@ -32,19 +35,29 @@ def after_confirm():
     finally:
         processor.stop()
         write_to_csv(processor.get_result())
+        print("\n" + "="*40)
+        print("🎉 Export complete! Your relic data has been saved to result.csv.")
+        print("="*40 + "\n")
 
 
 def write_to_csv(result, filename="result.csv"):
     """
     Writes the result (a list of lists) to a CSV file.
     Each inner list represents a row. Rows are padded to the length of the longest row.
+    The CSV is always saved in the 'export' folder at the same level as this script.
     """
     if not result:
         print("No results to write to CSV.")
         return
 
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    export_dir = os.path.join(script_dir, "export")
+    os.makedirs(export_dir, exist_ok=True)
+    export_path = os.path.join(export_dir, filename)
+
     max_len = max(len(row) for row in result)
-    with open(filename, "w", newline="", encoding="utf-8") as csvfile:
+    with open(export_path, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
         for row in result:
             writer.writerow(list(row) + [""] * (max_len - len(row)))
