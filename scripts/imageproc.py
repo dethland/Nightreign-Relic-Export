@@ -1,10 +1,9 @@
-from PIL import Image
 import pytesseract
 import queue
 import threading
 from PIL import Image
-import time
 import pandas as pd  # need for pytesseract OUTPUT.DATAFRAME
+import time
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -50,24 +49,20 @@ class ImageProcessor:
     def _worker(self):
         while not self._stop_event.is_set() or not self.queue.empty():
             try:
-                start_time = time.time()
-                # Estimate time for remaining images in queue
-                queue_size = self.queue.qsize()
-               
-                est_time_per_image = 0.0
-                temp_start = time.time()
-
-                screenshot = self.queue.get()
-                processed = self.process(screenshot)
-                self.result.append(processed)
-            
-                temp_end = time.time()
-                est_time_per_image = temp_end - temp_start
-                est_total = est_time_per_image * queue_size
-                print(f"Estimated remaining time: {est_total:.2f}s for {queue_size} images")
-                self.queue.task_done()
+                screenshot = self.queue.get(timeout=0.1)
             except queue.Empty:
                 continue
+
+            start_time = time.time()
+            processed = self.process(screenshot)
+            self.result.append(processed)
+            self.queue.task_done()
+
+            queue_size = self.queue.qsize()
+            elapsed = time.time() - start_time
+            if queue_size > 0:
+                est_total = elapsed * queue_size
+                print(f"Estimated remaining time: {est_total:.2f}s for {queue_size} images")
     
     def add_screenshot(self, screenshot):
         self.queue.put(screenshot)
@@ -103,28 +98,26 @@ class ImageProcessor:
         return polarized
 
     def extract_text(self, image):
-        # image is PIL image.Image
+        # Extract text from image using pytesseract and organize by row and line
         result = []
-        pixel_regions = self.get_row_regions(image)
-
         data = pytesseract.image_to_data(
             image, config=' --psm 6', output_type=pytesseract.Output.DATAFRAME)
         data = data[data.text.notnull()]
 
-        data['row'] = data['top'].apply(lambda y : self.assign_row(y, image))
+        # Assign each detected text box to a row and line
+        data['row'] = data['top'].apply(lambda y: self.assign_row(y, image))
         data = data[data['row'] != -1]
-
         data['line'] = data['top'].apply(lambda y: self.assign_line(y, image))
         data = data[data['line'] != -1]
 
-
-        grouped_rows = data.groupby('row')
-
-
-        for row_index, group in grouped_rows:
-            sorted_group = group.sort_values(by=["line","left"])
-            line = ' '.join(sorted_group['text'])
-            result.append(line.strip())
+        # Group by row, then by line within each row, and concatenate text
+        for row_index, row_group in data.groupby('row'):
+            lines = []
+            for line_index, line_group in row_group.groupby('line'):
+                sorted_line = line_group.sort_values(by="left")
+                line_text = ' '.join(sorted_line['text'])
+                lines.append(line_text.strip())
+            result.append(' '.join(lines).strip())
 
         return result
 

@@ -54,6 +54,10 @@ A tool for exporting relic data from Elden Ring.
 
 Contributions are welcome! Please open issues or submit pull requests.
 
+## Contact
+
+Join our [Discord server](https://discord.gg/bf3NSEF5EP) for support and discussion.
+
 ## License
 
 This project is licensed under the MIT License.
