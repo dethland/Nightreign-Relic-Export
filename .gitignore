@@ -161,3 +161,6 @@ cython_debug/
 
 # Ignore CSV files
 *.csv
+
+# Ignore files starting with test_
+test_*
