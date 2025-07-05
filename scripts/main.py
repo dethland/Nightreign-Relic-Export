@@ -6,6 +6,7 @@ import pydirectinput  # simulate input
 import csv
 import win32gui
 import os
+import time
 
 
 # TODO move the trigger functions into main
@@ -15,7 +16,13 @@ progress_bar_delta = 0.0
 
 elden_ring_window_name = "ELDEN RING NIGHTREIGN"
 
-pydirectinput.PAUSE = 0.05
+pydirectinput.PAUSE = 0
+
+def read_setting():
+    parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    setting_path = os.path.join(parent_dir, "setting.txt")
+    with open(setting_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def get_active_window_app_name():
@@ -31,7 +38,10 @@ def after_confirm():
     try:
         while should_continue():
             processor.add_screenshot(screenshot.screenshot_relic_info())
-            pydirectinput.press("right")
+            pydirectinput.keyDown("right")
+            time.sleep(0.01)
+            pydirectinput.keyUp("right")
+            time.sleep(0.04)
     finally:
         processor.stop()
         write_to_csv(processor.get_result())
@@ -85,7 +95,31 @@ def should_continue() -> bool:
     return progress_bar_delta >= 0
 
 
-if __name__ == "__main__":
+def main():
+    print("=" * 40)
+    print("✨ Nightreign Relic Export is running! ✨")
+    print("Press the 'ctrl + shift + f12' in-game to start export.")
+    print("Press ESC to exit.")
+    print("=" * 40)
     trigger.code_inject(after_confirm)
     trigger.register_hotkey()
     keyboard.wait('esc')
+
+
+def read_setting_file():
+    """
+    Reads the setting.txt file from the parent directory and returns its contents as a string.
+    """
+    parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    setting_path = os.path.join(parent_dir, "setting.txt")
+    with open(setting_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+if __name__ == "__main__":
+    setting = read_setting_file()
+    print("\n" + "="*40)
+    print("Current Settings:")
+    print(setting)
+    print("="*40 + "\n")
+    # main()
