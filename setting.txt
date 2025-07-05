@@ -1,18 +1,21 @@
-
-# OCR settings:
+# ===========================
+# OCR SETTINGS
+# ===========================
 # These settings influence the OCR process.
-# You can set the number of threads to speed up processing.
-# Set the OCR path if you have a custom installation location.
+# - ocr_exe_filepath: Set this to the path where Tesseract-OCR is installed.
+# - thread_number: Number of threads to use for OCR (higher = faster processing).
 
 ocr_exe_filepath = C:\Program Files\Tesseract-OCR
 thread_number = 2
 
-# Key press settings:
+# ===========================
+# KEY PRESS SETTINGS
+# ===========================
 # Adjust these values to control the speed of key presses.
-# Increasing the speed may cause Nightreign to miss inputs,
-# resulting in multiple screenshots of the same relic.
+# - key_press_duration: Time (in seconds) to hold down the key.
+# - key_press_delay: Time (in seconds) to wait after releasing the key.
+# Increasing these values may slow down processing, but decreasing them too much
+# may cause Nightreign to miss inputs and take multiple screenshots of the same relic.
 
-# the duration between press and release
-key_press_duration = 0.01 
-# the wait after release the key
-key_press_delay = 0.04 
+key_press_duration = 0.02   
+key_press_delay    = 0.04  
