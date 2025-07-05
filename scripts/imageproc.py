@@ -33,7 +33,7 @@ STAT_3_FIRST_REGION, STAT_3_SECOND_REGION = split_region_vertically(STAT_3_REGIO
 
 class ImageProcessor:
     # can star in seprate thread if mutilple file need to process, can also instant as a object to do process
-    def __init__(self, thread_flag: bool, ocr_path = DEFAULT_TESSERACT_PATH):
+    def __init__(self, thread_flag: bool, ocr_path=DEFAULT_TESSERACT_PATH, num_threads=2):
         self.ocr_path_setup(ocr_path)
         self.queue = queue.Queue()
         self.result = []
@@ -42,7 +42,7 @@ class ImageProcessor:
         self.processing_times = []
         self.largest_index = 0
         if thread_flag:
-            for _ in range(2):  # Start 2 threads
+            for _ in range(num_threads):  # Start specified number of threads
                 t = threading.Thread(target=self._worker)
                 t.start()
                 self.threads.append(t)
@@ -62,7 +62,7 @@ class ImageProcessor:
             queue_size = self.queue.qsize()
             self.processing_times.append(time.time() - start_time)
             if self.processing_times:
-                elapsed = sum(self.processing_times) / len(self.processing_times)
+                elapsed = (sum(self.processing_times) / len(self.processing_times)) / len(self.threads)
             else:
                 elapsed = 0
             if queue_size > 0:
@@ -71,7 +71,6 @@ class ImageProcessor:
                 sys.stdout.flush()
     
     def add_screenshot(self, screenshot):
-        
         self.queue.put([self.largest_index, screenshot])
         self.largest_index += 1
 
@@ -81,7 +80,7 @@ class ImageProcessor:
             t.join()
 
 
-    def ocr_path_setup(new_path):
+    def ocr_path_setup(self, new_path):
         pytesseract.pytesseract.tesseract_cmd = new_path
 
     def get_result(self):
