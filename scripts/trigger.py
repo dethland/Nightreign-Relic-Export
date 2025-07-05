@@ -1,5 +1,4 @@
 import keyboard
-import importlib
 
 inject_code = None
 

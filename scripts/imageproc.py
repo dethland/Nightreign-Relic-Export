@@ -6,15 +6,10 @@ import pandas as pd  # need for pytesseract OUTPUT.DATAFRAME
 import time
 import sys
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+DEFAULT_TESSERACT_PATH = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 COVER_ICON_MARGIN = (0.0032858707557502738, 0.15202702702702703, 0.04819277108433735, 0.8378378378378378)
 
-# TITLE_REGION = (0.002190580503833516, 0.0033783783783783786, 0.9014238773274917, 0.12837837837837837)  # left, top, sizex, sizey
-# # Original regions
-# STAT_1_REGION = (0.05147864184008762, 0.1858108108108108, 0.9649507119386638, 0.44932432432432434)
-# STAT_2_REGION = (0.04928806133625411, 0.4391891891891892, 0.963855421686747, 0.7027027027027027)
-# STAT_3_REGION = (0.050383351588170866, 0.7094594594594594, 0.9627601314348302, 0.9797297297297297)
 
 TITLE_REGION = (0, 0, 1, 0.16)  # left, top, sizex, sizey
 STAT_1_REGION = (0.05, 0.18, 0.93, 0.26)
@@ -38,7 +33,8 @@ STAT_3_FIRST_REGION, STAT_3_SECOND_REGION = split_region_vertically(STAT_3_REGIO
 
 class ImageProcessor:
     # can star in seprate thread if mutilple file need to process, can also instant as a object to do process
-    def __init__(self, thread_flag: bool):
+    def __init__(self, thread_flag: bool, ocr_path = DEFAULT_TESSERACT_PATH):
+        self.ocr_path_setup(ocr_path)
         self.queue = queue.Queue()
         self.result = []
         self._stop_event = threading.Event()
@@ -83,6 +79,10 @@ class ImageProcessor:
         self._stop_event.set()
         for t in self.threads:
             t.join()
+
+
+    def ocr_path_setup(new_path):
+        pytesseract.pytesseract.tesseract_cmd = new_path
 
     def get_result(self):
         self.result.sort(key=lambda x: x[0])

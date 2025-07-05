@@ -1,24 +1,31 @@
+import os
+import time
+import csv
+import keyboard
+import pydirectinput
+import win32gui
+
 import trigger
 import screenshot
 import imageproc
-import keyboard  # key detection
-import pydirectinput  # simulate input
-import csv
-import win32gui
-import os
-import time
 
+# Settings loaded from setting.txt or defined here as defaults
+DEFAULT_SETTINGS = {
+    "ocr_exe_filepath": r"C:\Program Files\Tesseract-OCR",
+    "thread_number": 2,
+    "key_press_duration": 0.01,
+    "key_press_delay": 0.04,
+}
 
-# TODO move the trigger functions into main
+ELDEN_RING_WINDOW_NAME = "ELDEN RING NIGHTREIGN"
+pydirectinput.PAUSE = 0
 
 previous_progress = None
 progress_bar_delta = 0.0
 
-elden_ring_window_name = "ELDEN RING NIGHTREIGN"
 
-pydirectinput.PAUSE = 0
-
-def read_setting():
+def read_setting_file():
+    """Reads the setting.txt file from the parent directory and returns its contents as a string."""
     parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     setting_path = os.path.join(parent_dir, "setting.txt")
     with open(setting_path, "r", encoding="utf-8") as f:
@@ -28,26 +35,6 @@ def read_setting():
 def get_active_window_app_name():
     hwnd = win32gui.GetForegroundWindow()
     return win32gui.GetWindowText(hwnd)
-
-
-def after_confirm():
-    if get_active_window_app_name() != elden_ring_window_name:
-        return
-
-    processor = imageproc.ImageProcessor(thread_flag=True)
-    try:
-        while should_continue():
-            processor.add_screenshot(screenshot.screenshot_relic_info())
-            pydirectinput.keyDown("right")
-            time.sleep(0.01)
-            pydirectinput.keyUp("right")
-            time.sleep(0.04)
-    finally:
-        processor.stop()
-        write_to_csv(processor.get_result())
-        print("\n" + "="*40)
-        print("🎉 Export complete! Your relic data has been saved to result.csv.")
-        print("="*40 + "\n")
 
 
 def write_to_csv(result, filename="result.csv"):
@@ -60,7 +47,6 @@ def write_to_csv(result, filename="result.csv"):
         print("No results to write to CSV.")
         return
 
-    # Get the directory where this script is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
     export_dir = os.path.join(script_dir, "export")
     os.makedirs(export_dir, exist_ok=True)
@@ -95,6 +81,26 @@ def should_continue() -> bool:
     return progress_bar_delta >= 0
 
 
+def after_confirm():
+    if get_active_window_app_name() != ELDEN_RING_WINDOW_NAME:
+        return
+
+    processor = imageproc.ImageProcessor(thread_flag=True)
+    try:
+        while should_continue():
+            processor.add_screenshot(screenshot.screenshot_relic_info())
+            pydirectinput.keyDown("right")
+            time.sleep(DEFAULT_SETTINGS["key_press_duration"])
+            pydirectinput.keyUp("right")
+            time.sleep(DEFAULT_SETTINGS["key_press_delay"])
+    finally:
+        processor.stop()
+        write_to_csv(processor.get_result())
+        print("\n" + "=" * 40)
+        print("🎉 Export complete! Your relic data has been saved to result.csv.")
+        print("=" * 40 + "\n")
+
+
 def main():
     print("=" * 40)
     print("✨ Nightreign Relic Export is running! ✨")
@@ -106,20 +112,10 @@ def main():
     keyboard.wait('esc')
 
 
-def read_setting_file():
-    """
-    Reads the setting.txt file from the parent directory and returns its contents as a string.
-    """
-    parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    setting_path = os.path.join(parent_dir, "setting.txt")
-    with open(setting_path, "r", encoding="utf-8") as f:
-        return f.read()
-
-
 if __name__ == "__main__":
     setting = read_setting_file()
-    print("\n" + "="*40)
+    print("\n" + "=" * 40)
     print("Current Settings:")
     print(setting)
-    print("="*40 + "\n")
+    print("=" * 40 + "\n")
     # main()
