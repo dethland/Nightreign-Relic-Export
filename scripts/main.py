@@ -9,17 +9,10 @@ import trigger
 import screenshot
 import imageproc
 
-# Settings loaded from setting.txt or defined here as defaults
-DEFAULT_SETTINGS = {
-    "ocr_exe_filepath": r"C:\Program Files\Tesseract-OCR",
-    "thread_number": 2,
-    "key_press_duration": 0.01,
-    "key_press_delay": 0.04,
-}
+setting = {}
 
 ELDEN_RING_WINDOW_NAME = "ELDEN RING NIGHTREIGN"
 pydirectinput.PAUSE = 0
-
 previous_progress = None
 progress_bar_delta = 0.0
 
@@ -28,8 +21,27 @@ def read_setting_file():
     """Reads the setting.txt file from the parent directory and returns its contents as a string."""
     parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     setting_path = os.path.join(parent_dir, "setting.txt")
+    raw = None
+    setting = {}
     with open(setting_path, "r", encoding="utf-8") as f:
-        return f.read()
+        raw = f.read()
+
+    # Convert setting.txt content (pure text) into SETTINGS dict
+    for line in raw.split("\n"):
+        if line.count("=") == 1 and line.count("#") == 0:
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            # Try to convert value to int or float if possible
+            if value.isdigit():
+                value = int(value)
+            else:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass
+            setting[key] = value
+    return setting
 
 
 def get_active_window_app_name():
@@ -65,6 +77,9 @@ def should_continue() -> bool:
     and determines whether to continue based on the change in progress.
     Returns True to continue, False to stop.
     """
+    if get_active_window_app_name() != ELDEN_RING_WINDOW_NAME:
+        return False
+
     global previous_progress, progress_bar_delta
 
     progress_bar_screenshot = screenshot.screenshot_progress_bar()
@@ -85,14 +100,14 @@ def after_confirm():
     if get_active_window_app_name() != ELDEN_RING_WINDOW_NAME:
         return
 
-    processor = imageproc.ImageProcessor(thread_flag=True)
+    processor = imageproc.ImageProcessor(thread_flag=True, ocr_path=setting["ocr_exe_filepath"], num_threads=setting["thread_number"])
     try:
         while should_continue():
             processor.add_screenshot(screenshot.screenshot_relic_info())
             pydirectinput.keyDown("right")
-            time.sleep(DEFAULT_SETTINGS["key_press_duration"])
+            time.sleep(setting["key_press_duration"])
             pydirectinput.keyUp("right")
-            time.sleep(DEFAULT_SETTINGS["key_press_delay"])
+            time.sleep(setting["key_press_delay"])
     finally:
         processor.stop()
         write_to_csv(processor.get_result())
@@ -114,8 +129,4 @@ def main():
 
 if __name__ == "__main__":
     setting = read_setting_file()
-    print("\n" + "=" * 40)
-    print("Current Settings:")
-    print(setting)
-    print("=" * 40 + "\n")
-    # main()
+    main()
