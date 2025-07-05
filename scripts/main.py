@@ -123,6 +123,7 @@ def main():
     print("=" * 40)
     print("✨ Nightreign Relic Export is running! ✨")
     print("Press the 'ctrl + shift + f12' in-game to start export.")
+    print("Press hotkeys again to break the loop ")
     print("Press ESC to exit.")
     print("=" * 40)
     trigger.code_inject(after_confirm)
