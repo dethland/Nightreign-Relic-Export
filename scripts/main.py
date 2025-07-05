@@ -108,6 +108,9 @@ def after_confirm():
             time.sleep(setting["key_press_duration"])
             pydirectinput.keyUp("right")
             time.sleep(setting["key_press_delay"])
+            if keyboard.is_pressed("ctrl+shift+f12"):
+                print("\n----break key pressed----\nprocessing remaining images")
+                break
     finally:
         processor.stop()
         write_to_csv(processor.get_result())
